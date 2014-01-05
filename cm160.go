@@ -80,10 +80,10 @@ func Open() *cm160 {
 	if dev == nil {
 		log.Fatalln("device not found")
 	}
-
-	if r := dev.DetachKernelDriver(IFACE_ID); r != 0 {
-		log.Fatalf("usb_detach_kernel_driver_np returns %d (%s)\n", r, libusb.LastError())
-	}
+	dev.DetachKernelDriver(IFACE_ID)
+	// if r := dev.DetachKernelDriver(IFACE_ID); r != 0 {
+	// 	log.Fatalf("usb_detach_kernel_driver_np returns %d (%s)\n", r, libusb.LastError())
+	// }
 	if r := dev.Configuration(1); r != 0 {
 		log.Fatalf("usb_set_configuration returns %d (%s)\n", r, libusb.LastError())
 	}
