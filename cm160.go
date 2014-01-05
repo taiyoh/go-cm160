@@ -37,8 +37,8 @@ const (
 const PIPE int = int(libusb.USB_TYPE_VENDOR | USB_RECIP_INTERFACE | libusb.USB_ENDPOINT_OUT)
 
 type cm160 struct {
-	device *libusb.Device
-	volt   int
+	device    *libusb.Device
+	isRunning bool
 }
 
 type Record struct {
@@ -63,7 +63,6 @@ type ctrlMsg struct {
 type bulkResponse struct {
 	buffer []byte
 	length int
-	volt   int
 }
 
 type ctrlMsgs []ctrlMsg
@@ -74,7 +73,7 @@ func (cmds ctrlMsgs) Each(cb func(c ctrlMsg)) {
 	}
 }
 
-func Open(volt int) *cm160 {
+func Open() *cm160 {
 
 	libusb.Init()
 	dev := libusb.Open(0x0fde, 0xca05)
@@ -106,22 +105,26 @@ func Open(volt int) *cm160 {
 		}
 	})
 
-	return &cm160{device: dev, volt: volt}
+	return &cm160{device: dev}
 }
 
-func (self *bulkResponse) ParseFrame() Record {
-	rec := Record{}
-	rec.Volt = self.volt
-	rec.Year = int(self.buffer[1]) + 2000
-	rec.Month = int(self.buffer[2] & 0x0f) // 0xcを期待してるのに0xccって返ってくることがある
-	rec.Day = int(self.buffer[3])
-	rec.Hour = int(self.buffer[4])
-	rec.Minute = int(self.buffer[5])
-	rec.Cost = float32(int(self.buffer[6])+(int(self.buffer[7])<<8)) / 100.0
-	rec.Amps = float32(int(self.buffer[8])+(int(self.buffer[9]))) * 0.07
-	rec.Watt = float32(rec.Volt) * rec.Amps
-	rec.IsLive = self.buffer[0] == FRAME_ID_LIVE
-	return rec
+func (self *bulkResponse) ParseFrame() *Record {
+	return &Record{
+		Year:   int(self.buffer[1]) + 2000,
+		Month:  int(self.buffer[2] & 0x0f), // 0xcを期待してるのに0xccって返ってくることがある
+		Day:    int(self.buffer[3]),
+		Hour:   int(self.buffer[4]),
+		Minute: int(self.buffer[5]),
+		Cost:   float32(int(self.buffer[6])+(int(self.buffer[7])<<8)) / 100.0,
+		Amps:   float32(int(self.buffer[8])+(int(self.buffer[9]))) * 0.07,
+		IsLive: self.buffer[0] == FRAME_ID_LIVE,
+	}
+	// rec.Watt = float32(rec.Volt) * rec.Amps
+}
+
+func (self *Record) CalcWatt(volt int) {
+	self.Volt = volt
+	self.Watt = float32(volt) * self.Amps
 }
 
 var (
@@ -140,6 +143,15 @@ func (self *bulkResponse) MsgToSend() uint8 {
 	}
 }
 
+func (self *bulkResponse) IsValid() bool {
+	checksum := 0x00
+	for i := 0; i < 10; i++ {
+		checksum += int(self.buffer[i])
+	}
+	checksum &= 0xff
+	return checksum == int(self.buffer[10])
+}
+
 func (self *cm160) BulkRead() ([]byte, int) {
 	buf := make([]byte, FRAME_LENGTH)
 	res_len := self.device.BulkRead(ENDPOINT_IN, buf)
@@ -151,7 +163,11 @@ func (self *cm160) BulkWrite(b uint8) int {
 	return self.device.BulkWrite(ENDPOINT_OUT, []byte{b})
 }
 
-func (self *cm160) Wait(cb func(buf Record)) {
+func (self *cm160) Stop() {
+	self.isRunning = false
+}
+
+func (self *cm160) Wait(cb func(buf *Record)) {
 
 	ch1 := make(chan *bulkResponse)
 	ch2 := make(chan bool)
@@ -162,7 +178,7 @@ func (self *cm160) Wait(cb func(buf Record)) {
 			// log.Printf("[%s] length = %d, %s\n", self.device.LastError(), l, buf)
 		} else {
 			// log.Printf("BulkRead result (%d): %#v\n", l, buf[2])
-			res = &bulkResponse{buffer: buf, length: l, volt: self.volt}
+			res = &bulkResponse{buffer: buf, length: l}
 		}
 		ch1 <- res
 	}
@@ -170,12 +186,13 @@ func (self *cm160) Wait(cb func(buf Record)) {
 	Proc := func(res *bulkResponse) {
 		if msg := res.MsgToSend(); msg != 0x00 {
 			self.BulkWrite(msg)
-		} else {
+		} else if res.IsValid() {
 			cb(res.ParseFrame())
 		}
 		ch2 <- true
 	}
 
+	self.isRunning = true
 	// main loop
 	for {
 		go Read()
@@ -186,10 +203,17 @@ func (self *cm160) Wait(cb func(buf Record)) {
 		}
 		go Proc(res)
 		<-ch2
+		if !self.isRunning {
+			break
+		}
 	}
 }
 
 func (self *cm160) Close() {
-	self.device.ReleaseDevice(IFACE_ID)
-	self.device.Close()
+	if r := self.device.ReleaseDevice(IFACE_ID); r < 0 {
+		log.Printf("usb_release_device error: %d (%s)\n", r, libusb.LastError())
+	}
+	if r := self.device.Close(); r < 0 {
+		log.Printf("usb_close error: %d (%s)\n", r, libusb.LastError())
+	}
 }
