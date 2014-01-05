@@ -5,6 +5,9 @@ import (
 	"encoding/binary"
 	"github.com/taiyoh/go-libusb"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 const (
@@ -171,6 +174,14 @@ func (self *cm160) Wait(cb func(buf *Record)) {
 
 	ch1 := make(chan *bulkResponse)
 	ch2 := make(chan bool)
+
+	go func() {
+		ch := make(chan os.Signal)
+		signal.Notify(ch, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+		<-ch
+		// fmt.Println("CTRL-C; exiting")
+		self.Stop()
+	}()
 
 	Read := func() {
 		var res *bulkResponse = nil
