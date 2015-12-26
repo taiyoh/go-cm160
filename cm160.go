@@ -5,9 +5,6 @@ import (
 	"encoding/binary"
 	"github.com/taiyoh/go-libusb"
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 const (
@@ -40,6 +37,7 @@ const (
 const PIPE int = int(libusb.USB_TYPE_VENDOR | USB_RECIP_INTERFACE | libusb.USB_ENDPOINT_OUT)
 
 type cm160 struct {
+	recch     chan *Record
 	device    *libusb.Device
 	isRunning bool
 }
@@ -76,7 +74,7 @@ func (cmds ctrlMsgs) Each(cb func(c ctrlMsg)) {
 	}
 }
 
-func Open() *cm160 {
+func Open(recch chan *Record) *cm160 {
 
 	libusb.Init()
 	dev := libusb.Open(0x0fde, 0xca05)
@@ -108,11 +106,12 @@ func Open() *cm160 {
 		}
 	})
 
-	return &cm160{device: dev}
+	return &cm160{recch: recch, device: dev, isRunning: true}
 }
 
-func (self *bulkResponse) ParseFrame() *Record {
-	return &Record{
+func (self *bulkResponse) ParseFrame(volt int) *Record {
+	rec := &Record{
+		Volt:   volt,
 		Year:   int(self.buffer[1]) + 2000,
 		Month:  int(self.buffer[2] & 0x0f), // 0xcを期待してるのに0xccって返ってくることがある
 		Day:    int(self.buffer[3]),
@@ -122,7 +121,8 @@ func (self *bulkResponse) ParseFrame() *Record {
 		Amps:   float32(int(self.buffer[8])+(int(self.buffer[9]))) * 0.07,
 		IsLive: self.buffer[0] == FRAME_ID_LIVE,
 	}
-	// rec.Watt = float32(rec.Volt) * rec.Amps
+	rec.Watt = float32(volt) * rec.Amps
+	return rec
 }
 
 func (self *Record) CalcWatt(volt int) {
@@ -170,21 +170,13 @@ func (self *cm160) Stop() {
 	self.isRunning = false
 }
 
-func (self *cm160) Wait(cb func(buf *Record)) {
+func (self *cm160) Run(volt int) {
 
 	ch1 := make(chan *bulkResponse)
 	ch2 := make(chan bool)
 
-	go func() {
-		ch := make(chan os.Signal)
-		signal.Notify(ch, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-		<-ch
-		// fmt.Println("CTRL-C; exiting")
-		self.Stop()
-	}()
-
 	Read := func() {
-		var res *bulkResponse = nil
+		var res *bulkResponse
 		if buf, l := self.BulkRead(); l <= 0 {
 			// log.Printf("[%s] length = %d, %s\n", self.device.LastError(), l, buf)
 		} else {
@@ -198,25 +190,23 @@ func (self *cm160) Wait(cb func(buf *Record)) {
 		if msg := res.MsgToSend(); msg != 0x00 {
 			self.BulkWrite(msg)
 		} else if res.IsValid() {
-			cb(res.ParseFrame())
+			self.recch <- res.ParseFrame(volt)
 		}
 		ch2 <- true
 	}
 
-	self.isRunning = true
 	// main loop
 	for {
+		if !self.isRunning {
+			break
+		}
 		go Read()
 		res := <-ch1
 		if res == nil {
-			// time.Sleep(500 * 100000000) // 0.5sec?
 			continue
 		}
 		go Proc(res)
 		<-ch2
-		if !self.isRunning {
-			break
-		}
 	}
 }
 
