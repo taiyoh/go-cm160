@@ -197,17 +197,16 @@ func (self *cm160) Run(volt int) {
 
 	// main loop
 	for {
+		if !self.isRunning {
+			break
+		}
 		go Read()
 		res := <-ch1
 		if res == nil {
-			// time.Sleep(500 * 100000000) // 0.5sec?
 			continue
 		}
 		go Proc(res)
 		<-ch2
-		if !self.isRunning {
-			break
-		}
 	}
 }
 
