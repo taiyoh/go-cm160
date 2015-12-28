@@ -23,7 +23,7 @@ func NewMkrClient(config MackerelConfig, name string) *MkrClient {
 func (self *MkrClient) post(record *cm160.Record) {
 	now := time.Now()
 	t := time.Date(record.Year, time.Month(record.Month), record.Day, record.Hour, record.Minute, now.Second(), 0, self.Loc)
-	if dur := now.Sub(t); dur.Hours() < 24.0 {
+	if dur := now.Sub(t); dur.Hours() < 1.0 {
 		err := self.Client.PostHostMetricValuesByHostID(self.HostId, []*mackerel.MetricValue{
 			&mackerel.MetricValue{
 				Name:  self.Name,

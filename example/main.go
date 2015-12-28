@@ -32,8 +32,8 @@ func main() {
 				} else {
 					log.Printf("not live at %d-%02d-%02d %02d:%02d amps: %#v\n", record.Year, record.Month, record.Day, record.Hour, record.Minute, record.Amps)
 				}
-				go client.post(record)
-				time.Sleep(10 * time.Millisecond)
+				client.post(record)
+				time.Sleep(50 * time.Millisecond)
 			default:
 				time.Sleep(1 * time.Second)
 			}
