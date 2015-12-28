@@ -108,9 +108,8 @@ func Open(recch chan *Record) *cm160 {
 	return &cm160{recch: recch, device: dev, isRunning: false}
 }
 
-func (self *bulkResponse) ParseFrame(volt int) *Record {
-	rec := &Record{
-		Volt:   volt,
+func (self *bulkResponse) ParseFrame() *Record {
+	return &Record{
 		Year:   int(self.raw[1]) + 2000,
 		Month:  int(self.raw[2] & 0x0f), // 0xcを期待してるのに0xccって返ってくることがある
 		Day:    int(self.raw[3]),
@@ -120,8 +119,6 @@ func (self *bulkResponse) ParseFrame(volt int) *Record {
 		Amps:   float32(int(self.raw[8])+(int(self.raw[9]))) * 0.07,
 		IsLive: self.raw[0] == FRAME_ID_LIVE,
 	}
-	rec.Watt = float32(volt) * rec.Amps
-	return rec
 }
 
 func (self *Record) CalcWatt(volt int) {
@@ -186,7 +183,7 @@ func (self *cm160) Stop() {
 	self.isRunning = false
 }
 
-func (self *cm160) Run(volt int) {
+func (self *cm160) Run() {
 	ch := make(chan bool)
 
 	Proc := func() {
@@ -200,7 +197,7 @@ func (self *cm160) Run(volt int) {
 				if msg := res.MsgToSend(); msg != 0x0 {
 					self.BulkWrite(msg)
 				} else if res.IsValid() {
-					self.recch <- res.ParseFrame(volt)
+					self.recch <- res.ParseFrame()
 				}
 			}
 		}
