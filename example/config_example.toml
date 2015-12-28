@@ -1,0 +1,7 @@
+[mackerel]
+apikey: "<api-key>"
+hostid: "<host-id>"
+
+[app]
+volt: 100
+name: "energy.ampare"
