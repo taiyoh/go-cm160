@@ -184,25 +184,6 @@ func (self *cm160) Stop() {
 }
 
 func (self *cm160) Run() {
-	ch := make(chan bool)
-
-	Proc := func() {
-		if self.isRunning == false {
-			ch <- false
-		}
-		if responses := self.BulkRead(); len(responses) == 0 {
-			log.Println("response length = 0")
-		} else {
-			for _, res := range responses {
-				if msg := res.MsgToSend(); msg != 0x0 {
-					self.BulkWrite(msg)
-				} else if res.IsValid() {
-					self.recch <- res.ParseFrame()
-				}
-			}
-		}
-		ch <- true
-	}
 
 	self.isRunning = true
 	// main loop
@@ -210,9 +191,13 @@ func (self *cm160) Run() {
 		if self.isRunning == false {
 			break
 		}
-		go Proc()
-		if keep := <-ch; keep != true {
-			break
+		responses := self.BulkRead()
+		for _, res := range responses {
+			if msg := res.MsgToSend(); msg != 0x0 {
+				self.BulkWrite(msg)
+			} else if res.IsValid() {
+				self.recch <- res.ParseFrame()
+			}
 		}
 	}
 }
