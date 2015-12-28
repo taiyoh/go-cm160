@@ -35,7 +35,7 @@ func main() {
 				client.post(record)
 				time.Sleep(50 * time.Millisecond)
 			default:
-				time.Sleep(1 * time.Second)
+				time.Sleep(50 * time.Millisecond)
 			}
 		}
 	}()
