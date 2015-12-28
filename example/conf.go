@@ -6,18 +6,14 @@ import (
 )
 
 type Config struct {
+	Volt     int
+	Name     string
 	Mackerel MackerelConfig
-	App      AppConfig
 }
 
 type MackerelConfig struct {
-	Apikey string "toml:apikey"
-	Hostid string "toml:hostid"
-}
-
-type AppConfig struct {
-	Volt int    "toml:volt"
-	Name string "toml:name"
+	Apikey string
+	Hostid string
 }
 
 func LoadConfig() *Config {

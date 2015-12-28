@@ -13,7 +13,7 @@ func main() {
 	recCh := make(chan *cm160.Record)
 	sigCh := BuildSigWatcher()
 
-	client := NewMkrClient(config.Mackerel, config.App.Name)
+	client := NewMkrClient(config.Mackerel, config.Name)
 
 	device := cm160.Open(recCh)
 	defer device.Close()
@@ -33,8 +33,10 @@ func main() {
 					log.Printf("not live at %d-%02d-%02d %02d:%02d amps: %#v\n", record.Year, record.Month, record.Day, record.Hour, record.Minute, record.Amps)
 				}
 				go client.post(record)
+				time.Sleep(10 * time.Millisecond)
+			default:
+				time.Sleep(1 * time.Second)
 			}
-			time.Sleep(10 * time.Second)
 		}
 	}()
 

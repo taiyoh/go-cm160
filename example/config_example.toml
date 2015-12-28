@@ -1,7 +1,6 @@
-[mackerel]
-apikey: "<api-key>"
-hostid: "<host-id>"
+volt = 100
+name = "energy.ampare"
 
-[app]
-volt: 100
-name: "energy.ampare"
+[mackerel]
+apikey = "<api-key>"
+hostid = "<host-id>"
