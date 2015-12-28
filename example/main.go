@@ -38,7 +38,7 @@ func main() {
 		}
 	}()
 
-	device.Run(config.App.Volt)
+	device.Run()
 
 	log.Println("exit process")
 }
