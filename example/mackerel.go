@@ -14,10 +14,10 @@ type MkrClient struct {
 	HostId string
 }
 
-func NewMkrClient(apikey, hostid, name string) *MkrClient {
-	client := mackerel.NewClient(apikey)
+func NewMkrClient(config MackerelConfig, name string) *MkrClient {
+	client := mackerel.NewClient(config.Apikey)
 	loc, _ := time.LoadLocation("Asia/Tokyo")
-	return &MkrClient{Client: client, HostId: hostid, Loc: loc, Name: name}
+	return &MkrClient{Client: client, HostId: config.Hostid, Loc: loc, Name: name}
 }
 
 func (self *MkrClient) post(record *cm160.Record) {
@@ -30,6 +30,6 @@ func (self *MkrClient) post(record *cm160.Record) {
 		},
 	})
 	if err != nil {
-		log.Printf("mackerel error: %#v", err)
+		log.Printf("mackerel post error: %#v", err)
 	}
 }

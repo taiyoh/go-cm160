@@ -13,7 +13,7 @@ func main() {
 	recCh := make(chan *cm160.Record)
 	sigCh := BuildSigWatcher()
 
-	client := NewMkrClient(config.Mackerel.Apikey, config.Mackerel.Hostid, config.App.Name)
+	client := NewMkrClient(config.Mackerel, config.App.Name)
 
 	device := cm160.Open(recCh)
 	defer device.Close()
