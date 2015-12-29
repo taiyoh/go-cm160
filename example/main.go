@@ -3,14 +3,17 @@ package main
 import (
 	"github.com/taiyoh/go-cm160"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
+
+const location string = "Asia/Tokyo"
 
 func main() {
 
 	config := LoadConfig()
-
-	sigCh := BuildSigWatcher()
 
 	client := NewMkrClient(config.Mackerel, config.Name)
 
@@ -19,28 +22,37 @@ func main() {
 
 	log.Println("device initialized")
 
+	// signal handling
 	go func() {
-		for {
-			select {
-			case <-sigCh:
-				log.Println("stop running")
-				device.Stop()
-			default:
-				time.Sleep(10 * time.Millisecond)
-			}
-		}
+		ch := make(chan os.Signal)
+		signal.Notify(ch, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+		caughtsig := <-ch
+		log.Printf("signal caught: %#v exiting\n", caughtsig)
+		device.Stop()
 	}()
 
+	// sender
+	loc, _ := time.LoadLocation(location)
+	Send := func(record *cm160.Record) {
+		now := time.Now()
+		t := time.Date(record.Year, time.Month(record.Month), record.Day, record.Hour, record.Minute, now.Second(), 0, loc)
+		if record.IsLive {
+			log.Printf("live record amps: %#v\n", record.Amps)
+		} else {
+			log.Printf("not live at %s amps: %#v\n", t.Format("2006-01-02 15:04"), record.Amps)
+		}
+		// 10分以内のデータなら送信しよう
+		if dur := now.Sub(t); dur.Minutes() < 10.0 {
+			client.post(record.Amps, t.Unix())
+		}
+	}
+
+	// main loop
 	for {
 		if record := device.Read(); record != nil {
-			if record.IsLive {
-				log.Printf("live record amps: %#v\n", record.Amps)
-			} else {
-				log.Printf("not live at %d-%02d-%02d %02d:%02d amps: %#v\n", record.Year, record.Month, record.Day, record.Hour, record.Minute, record.Amps)
-			}
-			client.post(record)
+			Send(record)
 		}
-		if device.IsRunning() == false {
+		if !device.IsRunning() {
 			break
 		}
 	}
