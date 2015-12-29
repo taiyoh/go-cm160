@@ -1,10 +1,13 @@
 package cm160
 
+// FrameID is data flag.
+// Live is current data, Db is stored data
 const (
-	FRAME_ID_LIVE uint8 = 0x51
-	FRAME_ID_DB   uint8 = 0x59
+	FrameIDLive uint8 = 0x51
+	FrameIDDb   uint8 = 0x59
 )
 
+// Record is data format from cm160
 type Record struct {
 	Volt   int
 	Year   int
@@ -18,6 +21,7 @@ type Record struct {
 	Watt   float32
 }
 
+// NewRecord returns Record
 func NewRecord(res *bulkResponse) *Record {
 	return &Record{
 		Year:   int(res.raw[1]) + 2000,
@@ -27,10 +31,11 @@ func NewRecord(res *bulkResponse) *Record {
 		Minute: int(res.raw[5]),
 		Cost:   float32(int(res.raw[6])+(int(res.raw[7])<<8)) / 100.0,
 		Amps:   float32(int(res.raw[8])+(int(res.raw[9]))) * 0.07,
-		IsLive: res.raw[0] == FRAME_ID_LIVE,
+		IsLive: res.raw[0] == FrameIDLive,
 	}
 }
 
+// CalcWatt calculates watt by volt and amps
 func (c *Record) CalcWatt(volt int) {
 	c.Volt = volt
 	c.Watt = float32(volt) * c.Amps

@@ -8,6 +8,7 @@ type cm160 struct {
 	histories []*Record
 }
 
+// Open returns cm160
 func Open() *cm160 {
 
 	dev := InitializeDevice(0x0fde, 0xca05)
@@ -22,9 +23,17 @@ func (c *cm160) IsRunning() bool {
 	return c.isRunning
 }
 
-func (c *cm160) Read() *Record {
-	var record *Record
+func (c *cm160) AddRecord(r *Record) {
+	c.histories = append(c.histories, r)
+}
 
+func (c *cm160) ShiftRecord() *Record {
+	record := c.histories[0]
+	c.histories = c.histories[1:]
+	return record
+}
+
+func (c *cm160) Read() *Record {
 	if len(c.histories) == 0 {
 		for {
 			responses := c.ReadFromDevice()
@@ -32,7 +41,7 @@ func (c *cm160) Read() *Record {
 				if res.NeedToReply() {
 					c.WriteToDevice(res.Reply())
 				} else if res.IsValid() {
-					c.histories = append(c.histories, res.BuildRecord())
+					c.AddRecord(res.BuildRecord())
 				}
 			}
 			if len(c.histories) > 0 {
@@ -40,10 +49,9 @@ func (c *cm160) Read() *Record {
 			}
 		}
 	}
+	var record *Record
 	if len(c.histories) > 0 {
-		// shift操作
-		record = c.histories[0]
-		c.histories = c.histories[1:]
+		record = c.ShiftRecord()
 	}
 	return record
 }

@@ -32,6 +32,7 @@ type ctrlMsg struct {
 	data  []byte
 }
 
+// InitializeDevice does opening device and sending control messages
 func InitializeDevice(vid, pid int) *libusb.Device {
 	libusb.Init()
 	dev := libusb.Open(vid, pid)
@@ -70,24 +71,23 @@ func InitializeDevice(vid, pid int) *libusb.Device {
 func (c *cm160) ReadFromDevice() []*bulkResponse {
 	buf := make([]byte, 512)
 	reslen := c.device.BulkRead(ENDPOINT_IN, buf)
-	looptimes := int(reslen / FRAME_LENGTH)
+	looptimes := int(reslen / FrameLength)
 
 	bufptr := 0
 	responses := make([]*bulkResponse, looptimes)
 	for i := 0; i < looptimes; i++ {
-		block := make([]byte, FRAME_LENGTH)
-		for j := 0; j < FRAME_LENGTH; j++ {
+		block := make([]byte, FrameLength)
+		for j := 0; j < FrameLength; j++ {
 			block[j] = buf[bufptr+j]
 		}
 		responses[i] = NewBulkResponse(block)
-		bufptr += FRAME_LENGTH
+		bufptr += FrameLength
 	}
 
 	return responses
 }
 
 func (c *cm160) WriteToDevice(b uint8) int {
-	// log.Printf("BulkWrite to %#v: %#v\n", ENDPOINT_OUT, b)
 	return c.device.BulkWrite(ENDPOINT_OUT, []byte{b})
 }
 
