@@ -29,24 +29,24 @@ func NewBulkResponse(raw []byte) *bulkResponse {
 	return &bulkResponse{raw: raw, reply: reply}
 }
 
-func (self *bulkResponse) BuildRecord() *Record {
-	return NewRecord(self)
+func (r *bulkResponse) BuildRecord() *Record {
+	return NewRecord(r)
 }
 
-func (self *bulkResponse) IsValid() bool {
+func (r *bulkResponse) IsValid() bool {
 	checksum := 0x00
 	buflen := FRAME_LENGTH - 1
 	for i := 0; i < buflen; i++ {
-		checksum += int(self.raw[i])
+		checksum += int(r.raw[i])
 	}
 	checksum &= 0xff
-	return checksum == int(self.raw[10])
+	return checksum == int(r.raw[10])
 }
 
-func (self *bulkResponse) NeedToReply() bool {
-	return self.reply != 0x0
+func (r *bulkResponse) NeedToReply() bool {
+	return r.reply != 0x0
 }
 
-func (self *bulkResponse) Reply() uint8 {
-	return self.reply
+func (r *bulkResponse) Reply() uint8 {
+	return r.reply
 }

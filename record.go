@@ -31,7 +31,7 @@ func NewRecord(res *bulkResponse) *Record {
 	}
 }
 
-func (self *Record) CalcWatt(volt int) {
-	self.Volt = volt
-	self.Watt = float32(volt) * self.Amps
+func (c *Record) CalcWatt(volt int) {
+	c.Volt = volt
+	c.Watt = float32(volt) * c.Amps
 }

@@ -14,36 +14,36 @@ func Open() *cm160 {
 	return &cm160{device: dev, isRunning: true}
 }
 
-func (self *cm160) Stop() {
-	self.isRunning = false
+func (c *cm160) Stop() {
+	c.isRunning = false
 }
 
-func (self *cm160) IsRunning() bool {
-	return self.isRunning
+func (c *cm160) IsRunning() bool {
+	return c.isRunning
 }
 
-func (self *cm160) Read() *Record {
+func (c *cm160) Read() *Record {
 	var record *Record
 
-	if len(self.histories) == 0 {
+	if len(c.histories) == 0 {
 		for {
-			responses := self.ReadFromDevice()
+			responses := c.ReadFromDevice()
 			for _, res := range responses {
 				if res.NeedToReply() {
-					self.WriteToDevice(res.Reply())
+					c.WriteToDevice(res.Reply())
 				} else if res.IsValid() {
-					self.histories = append(self.histories, res.BuildRecord())
+					c.histories = append(c.histories, res.BuildRecord())
 				}
 			}
-			if len(self.histories) > 0 {
+			if len(c.histories) > 0 {
 				break
 			}
 		}
 	}
-	if len(self.histories) > 0 {
+	if len(c.histories) > 0 {
 		// shift操作
-		record = self.histories[0]
-		self.histories = self.histories[1:]
+		record = c.histories[0]
+		c.histories = c.histories[1:]
 	}
 	return record
 }
