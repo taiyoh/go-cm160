@@ -40,12 +40,10 @@ func main() {
 			}
 			client.post(record)
 		}
-		if client.IsRunning() == false {
+		if device.IsRunning() == false {
 			break
 		}
 	}
-
-	device.Run()
 
 	log.Println("exit process")
 }
