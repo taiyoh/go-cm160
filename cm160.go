@@ -2,39 +2,52 @@ package cm160
 
 import "github.com/taiyoh/go-libusb"
 
-type cm160 struct {
+// CM160 is root object of this library
+type CM160 struct {
 	device    *libusb.Device
 	isRunning bool
 	histories []*Record
 }
 
 // Open returns cm160
-func Open() *cm160 {
+func Open() *CM160 {
 
 	dev := InitializeDevice(0x0fde, 0xca05)
-	return &cm160{device: dev, isRunning: true}
+	return &CM160{device: dev, isRunning: true}
 }
 
-func (c *cm160) Stop() {
+// Stop is dropping flag for stopping loop
+func (c *CM160) Stop() {
 	c.isRunning = false
 }
 
-func (c *cm160) IsRunning() bool {
+// IsRunning returns flag either running or not
+func (c *CM160) IsRunning() bool {
 	return c.isRunning
 }
 
-func (c *cm160) AddRecord(r *Record) {
+// AddRecord appends Record in histories
+func (c *CM160) AddRecord(r *Record) {
 	c.histories = append(c.histories, r)
 }
 
-func (c *cm160) ShiftRecord() *Record {
-	record := c.histories[0]
-	c.histories = c.histories[1:]
+// ShiftRecord retrieve Record in histories
+func (c *CM160) ShiftRecord() *Record {
+	var record *Record
+	if len(c.histories) > 0 {
+		record = c.histories[0]
+		c.histories = c.histories[1:]
+	}
 	return record
 }
 
-func (c *cm160) Read() *Record {
-	if len(c.histories) == 0 {
+// IsEmptyRecords returns either empty or not
+func (c *CM160) IsEmptyRecords() bool {
+	return len(c.histories) == 0
+}
+
+func (c *CM160) Read() *Record {
+	if c.IsEmptyRecords() {
 		for {
 			responses := c.ReadFromDevice()
 			for _, res := range responses {
@@ -44,14 +57,10 @@ func (c *cm160) Read() *Record {
 					c.AddRecord(res.BuildRecord())
 				}
 			}
-			if len(c.histories) > 0 {
+			if !c.IsEmptyRecords() {
 				break
 			}
 		}
 	}
-	var record *Record
-	if len(c.histories) > 0 {
-		record = c.ShiftRecord()
-	}
-	return record
+	return c.ShiftRecord()
 }

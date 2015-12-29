@@ -22,7 +22,7 @@ type Record struct {
 }
 
 // NewRecord returns Record
-func NewRecord(res *bulkResponse) *Record {
+func NewRecord(res *BulkResponse) *Record {
 	return &Record{
 		Year:   int(res.raw[1]) + 2000,
 		Month:  int(res.raw[2] & 0x0f), // 0xcを期待してるのに0xccって返ってくることがある

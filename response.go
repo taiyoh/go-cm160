@@ -5,7 +5,8 @@ import "bytes"
 // FrameLength is data size
 const FrameLength int = 11
 
-type bulkResponse struct {
+// BulkResponse is chunked response from usb device
+type BulkResponse struct {
 	raw   []byte
 	reply uint8
 }
@@ -17,7 +18,7 @@ var (
 )
 
 // NewBulkResponse returns bulkResponse
-func NewBulkResponse(raw []byte) *bulkResponse {
+func NewBulkResponse(raw []byte) *BulkResponse {
 	var reply uint8 // it's magic word
 	switch {
 	case bytes.Compare(IDMsg, raw) == 0:
@@ -27,14 +28,16 @@ func NewBulkResponse(raw []byte) *bulkResponse {
 	default:
 		reply = 0x0
 	}
-	return &bulkResponse{raw: raw, reply: reply}
+	return &BulkResponse{raw: raw, reply: reply}
 }
 
-func (r *bulkResponse) BuildRecord() *Record {
+// BuildRecord returns new *cm160.Record
+func (r *BulkResponse) BuildRecord() *Record {
 	return NewRecord(r)
 }
 
-func (r *bulkResponse) IsValid() bool {
+// IsValid returns response is either valid or not
+func (r *BulkResponse) IsValid() bool {
 	checksum := 0x00
 	buflen := FrameLength - 1
 	for i := 0; i < buflen; i++ {
@@ -44,10 +47,12 @@ func (r *bulkResponse) IsValid() bool {
 	return checksum == int(r.raw[10])
 }
 
-func (r *bulkResponse) NeedToReply() bool {
+// NeedToReply returns this response is either system message or not
+func (r *BulkResponse) NeedToReply() bool {
 	return r.reply != 0x0
 }
 
-func (r *bulkResponse) Reply() uint8 {
+// Reply returns next message to send
+func (r *BulkResponse) Reply() uint8 {
 	return r.reply
 }

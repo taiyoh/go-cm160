@@ -68,7 +68,8 @@ func InitializeDevice(vid, pid int) *libusb.Device {
 	return dev
 }
 
-func (c *cm160) ReadFromDevice() []*bulkResponse {
+// ReadFromDevice is reading from usb device and chunking response
+func (c *CM160) ReadFromDevice() []*bulkResponse {
 	buf := make([]byte, 512)
 	reslen := c.device.BulkRead(ENDPOINT_IN, buf)
 	looptimes := int(reslen / FrameLength)
@@ -87,11 +88,13 @@ func (c *cm160) ReadFromDevice() []*bulkResponse {
 	return responses
 }
 
-func (c *cm160) WriteToDevice(b uint8) int {
+// WriteToDevice is sending 1 byte to usb device
+func (c *CM160) WriteToDevice(b uint8) int {
 	return c.device.BulkWrite(ENDPOINT_OUT, []byte{b})
 }
 
-func (c *cm160) Close() {
+// Close is process for closing process
+func (c *CM160) Close() {
 	if r := c.device.ReleaseDevice(IFACE_ID); r < 0 {
 		log.Printf("usb_release_device error: %d (%s)\n", r, libusb.LastError())
 	}
