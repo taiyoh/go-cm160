@@ -69,13 +69,13 @@ func InitializeDevice(vid, pid int) *libusb.Device {
 }
 
 // ReadFromDevice is reading from usb device and chunking response
-func (c *CM160) ReadFromDevice() []*bulkResponse {
+func (c *CM160) ReadFromDevice() []*BulkResponse {
 	buf := make([]byte, 512)
 	reslen := c.device.BulkRead(ENDPOINT_IN, buf)
 	looptimes := int(reslen / FrameLength)
 
 	bufptr := 0
-	responses := make([]*bulkResponse, looptimes)
+	responses := make([]*BulkResponse, looptimes)
 	for i := 0; i < looptimes; i++ {
 		block := make([]byte, FrameLength)
 		for j := 0; j < FrameLength; j++ {
