@@ -32,7 +32,7 @@ type ctrlMsg struct {
 	data  []byte
 }
 
-// InitializeDevice does opening device and sending control messages
+// InitializeDevice : open device and send control messages
 func InitializeDevice(vid, pid int) *libusb.Device {
 	libusb.Init()
 	dev := libusb.Open(vid, pid)
@@ -68,7 +68,7 @@ func InitializeDevice(vid, pid int) *libusb.Device {
 	return dev
 }
 
-// ReadFromDevice is reading from usb device and chunking response
+// ReadFromDevice : read and chunk data from usb device
 func (c *CM160) ReadFromDevice() []*BulkResponse {
 	buf := make([]byte, 512)
 	reslen := c.device.BulkRead(ENDPOINT_IN, buf)
@@ -88,12 +88,12 @@ func (c *CM160) ReadFromDevice() []*BulkResponse {
 	return responses
 }
 
-// WriteToDevice is sending 1 byte to usb device
+// WriteToDevice : send 1 byte to usb device
 func (c *CM160) WriteToDevice(b uint8) int {
 	return c.device.BulkWrite(ENDPOINT_OUT, []byte{b})
 }
 
-// Close is process for closing process
+// Close : clean up
 func (c *CM160) Close() {
 	if r := c.device.ReleaseDevice(IFACE_ID); r < 0 {
 		log.Printf("usb_release_device error: %d (%s)\n", r, libusb.LastError())

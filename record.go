@@ -7,7 +7,7 @@ const (
 	FrameIDDb   uint8 = 0x59
 )
 
-// Record is data format from cm160
+// Record : data format from cm160
 type Record struct {
 	Volt   int
 	Year   int
@@ -21,7 +21,7 @@ type Record struct {
 	Watt   float32
 }
 
-// NewRecord returns Record
+// NewRecord : returns new Record
 func NewRecord(res *BulkResponse) *Record {
 	return &Record{
 		Year:   int(res.raw[1]) + 2000,
@@ -35,7 +35,7 @@ func NewRecord(res *BulkResponse) *Record {
 	}
 }
 
-// CalcWatt calculates watt by volt and amps
+// CalcWatt : calculates watt by volt and amps
 func (c *Record) CalcWatt(volt int) {
 	c.Volt = volt
 	c.Watt = float32(volt) * c.Amps

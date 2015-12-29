@@ -5,20 +5,20 @@ import (
 	"log"
 )
 
-// Config for this app
+// Config : config object
 type Config struct {
 	Volt     int
 	Name     string
 	Mackerel MackerelConfig
 }
 
-// MackerelConfig for mackerel section in Config
+// MackerelConfig : mackerel section in Config
 type MackerelConfig struct {
 	Apikey string
 	Hostid string
 }
 
-// LoadConfig is loading config from toml
+// LoadConfig : load from toml file
 func LoadConfig(file string) *Config {
 	var config Config
 	_, err := toml.DecodeFile(file, &config)

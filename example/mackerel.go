@@ -5,20 +5,20 @@ import (
 	"log"
 )
 
-// MkrClient client for this app with mackerel
+// MkrClient : client for this app with mackerel
 type MkrClient struct {
 	Client *mackerel.Client
 	Name   string
 	HostID string
 }
 
-// NewMkrClient returns new MkrClient
+// NewMkrClient : returns new MkrClient
 func NewMkrClient(config MackerelConfig, name string) *MkrClient {
 	client := mackerel.NewClient(config.Apikey)
 	return &MkrClient{Client: client, HostID: config.Hostid, Name: name}
 }
 
-// Post post ampare to mackerel
+// Post : posts ampare to mackerel
 func (m *MkrClient) Post(amps float32, t int64) {
 	err := m.Client.PostHostMetricValuesByHostID(m.HostID, []*mackerel.MetricValue{
 		&mackerel.MetricValue{
