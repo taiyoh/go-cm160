@@ -6,12 +6,11 @@ import "github.com/taiyoh/go-libusb"
 type CM160 struct {
 	device    *libusb.Device
 	isRunning bool
-	histories []*Record
+	records   []*Record
 }
 
 // Open returns cm160
 func Open() *CM160 {
-
 	dev := InitializeDevice(0x0fde, 0xca05)
 	return &CM160{device: dev, isRunning: true}
 }
@@ -28,22 +27,22 @@ func (c *CM160) IsRunning() bool {
 
 // AddRecord appends Record in histories
 func (c *CM160) AddRecord(r *Record) {
-	c.histories = append(c.histories, r)
+	c.records = append(c.records, r)
 }
 
 // ShiftRecord retrieve Record in histories
 func (c *CM160) ShiftRecord() *Record {
 	var record *Record
-	if len(c.histories) > 0 {
-		record = c.histories[0]
-		c.histories = c.histories[1:]
+	if len(c.records) > 0 {
+		record = c.records[0]
+		c.records = c.records[1:]
 	}
 	return record
 }
 
 // IsEmptyRecords returns either empty or not
 func (c *CM160) IsEmptyRecords() bool {
-	return len(c.histories) == 0
+	return len(c.records) == 0
 }
 
 func (c *CM160) Read() *Record {
