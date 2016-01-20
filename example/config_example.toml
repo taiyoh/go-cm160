@@ -1,6 +1,5 @@
 volt = 100
-name = "energy.ampare"
 
-[mackerel]
+[m2x]
 apikey = "<api-key>"
-hostid = "<host-id>"
+deviceid = "<device-id>"
