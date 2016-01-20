@@ -7,15 +7,14 @@ import (
 
 // Config : config object
 type Config struct {
-	Volt     int
-	Name     string
-	Mackerel MackerelConfig
+	Volt int
+	M2x  M2xConfig
 }
 
-// MackerelConfig : mackerel section in Config
-type MackerelConfig struct {
-	Apikey string
-	Hostid string
+// M2xConfig : m2x section in Config
+type M2xConfig struct {
+	Apikey   string
+	Deviceid string
 }
 
 // LoadConfig : load from toml file

@@ -31,7 +31,7 @@ func main() {
 
 	// sender
 	loc, _ := time.LoadLocation(location)
-	client := NewMkrClient(config.Mackerel, config.Name)
+	client := NewM2xClient(config.M2x)
 	Send := func(record *cm160.Record) {
 		now := time.Now()
 		t := time.Date(record.Year, time.Month(record.Month), record.Day, record.Hour, record.Minute, now.Second(), 0, loc)
@@ -42,7 +42,7 @@ func main() {
 		}
 		// 10分以内のデータなら送信しよう
 		if dur := now.Sub(t); dur.Minutes() < 10.0 {
-			client.Post(record.Amps, t.Unix())
+			client.Post(record.Amps, t)
 		}
 	}
 
